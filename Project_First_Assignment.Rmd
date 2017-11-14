@@ -1,0 +1,43 @@
+---
+title: "Project_First_Assignment"
+author: "Aldo Myrtaj"
+date: "November 14, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+#set work directory
+setwd("/media/aldo_myrtaj/DATA/OneDriveNew/OneDrive - rwth-aachen.de/Documents/RWTH/3rd_Semester/ws17/Data Visualisation and Analytics/RStudioDirectory/Project")
+
+#load libraries pacman and google maps
+library(pacman)
+library(ggmap)
+library(data.table)
+p_load(tidyverse, stringr, rvest)
+
+#load data
+TAXI_DATA <- read.table("yellow_tripdata_2016-11.csv", skip = 1, stringsAsFactors = FALSE, sep = ",")
+TAXI_NAMES <- read.table("yellow_tripdata_2016-11.csv", nrow = 1, stringsAsFactors = FALSE, sep = ",")
+TAXI_ZONES <- fread("taxi+_zone_lookup.csv")
+#clean unwanted rows (empty rows)
+TAXI_DATA <- TAXI_DATA[,-c(18:19)]
+names(TAXI_DATA) <- TAXI_NAMES
+
+#merge location with data
+TAXI_DATA <- merge(TAXI_DATA, TAXI_ZONES[,c("LocationID", "Zone")], by.x="PULocationID", by.y="LocationID", all.x= TRUE)
+names(TAXI_DATA)[names(TAXI_DATA) == "Zone"] <- "PULocationZone"
+TAXI_DATA <- merge(TAXI_DATA, TAXI_ZONES[,c("LocationID", "Zone")], by.x="DOLocationID", by.y="LocationID", all.x= TRUE)
+names(TAXI_DATA)[names(TAXI_DATA) == "Zone"] <- "DOLocationZone"
+
+#display raw data head
+head(TAXI_DATA)
+
+head(TAXI_DATA$PULocationID)
+
+##qmap(location = "pal hasi", zoom= 18)
+```
