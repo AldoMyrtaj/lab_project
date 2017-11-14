@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 setwd("/media/aldo_myrtaj/DATA/OneDriveNew/OneDrive - rwth-aachen.de/Documents/RWTH/3rd_Semester/ws17/Data Visualisation and Analytics/RStudioDirectory/Project")
 
 #load libraries pacman and google maps
+install.packages("ggmap")
 library(pacman)
 library(ggmap)
 library(data.table)
@@ -28,16 +29,51 @@ TAXI_ZONES <- fread("taxi+_zone_lookup.csv")
 TAXI_DATA <- TAXI_DATA[,-c(18:19)]
 names(TAXI_DATA) <- TAXI_NAMES
 
+#clean Zone in TAXI_ZONES
+TAXI_ZONES$Zone <- gsub("\\<\\w+[/]","", TAXI_ZONES$Zone)
+
+#create geo coordinates from google maps latitude and longlitude 
+x <- 1
+TAXI_GEO_COORDINATES <- data.frame(lon=character(), 
+                 lat=character(),
+                 stringsAsFactors=FALSE) 
+for(i in TAXI_ZONES$Zone) {
+  TAXI_GEO_COORDINATES[x,] <- geocode(paste(as.character(i)," NEW YORK"))
+  while(is.na(TAXI_GEO_COORDINATES[x,]$lon)) {
+    TAXI_GEO_COORDINATES[x,] <- geocode(paste(as.character(i)," NEW YORK"))
+  }
+  x <- x + 1
+}
+
+#remove Index 264 and 256
+TAXI_ZONES <- TAXI_ZONES[-c(264:265),]
+TAXI_GEO_COORDINATES <- TAXI_GEO_COORDINATES[-c(264:265),]
+
+#removing index from main data as well
+TAXI_DATA <- TAXI_DATA[TAXI_DATA$PULocationID != 264,]
+TAXI_DATA <- TAXI_DATA[TAXI_DATA$PULocationID != 265,]
+TAXI_DATA <- TAXI_DATA[TAXI_DATA$DOLocationID != 264,]
+TAXI_DATA <- TAXI_DATA[TAXI_DATA$DOLocationID != 265,]
+##debugging TAXI_DATA  %>% filter(DOLocationID == 1) %>% head()
+
+
+TAXI_ZONES <- data.frame(TAXI_ZONES, TAXI_GEO_COORDINATES)
+
+
 #merge location with data
-TAXI_DATA <- merge(TAXI_DATA, TAXI_ZONES[,c("LocationID", "Zone")], by.x="PULocationID", by.y="LocationID", all.x= TRUE)
-names(TAXI_DATA)[names(TAXI_DATA) == "Zone"] <- "PULocationZone"
-TAXI_DATA <- merge(TAXI_DATA, TAXI_ZONES[,c("LocationID", "Zone")], by.x="DOLocationID", by.y="LocationID", all.x= TRUE)
-names(TAXI_DATA)[names(TAXI_DATA) == "Zone"] <- "DOLocationZone"
+TAXI_DATA <- merge(TAXI_DATA, TAXI_ZONES[,c("LocationID", "lon", "lat")], by.x="PULocationID", by.y="LocationID", all.x= TRUE)
+names(TAXI_DATA)[names(TAXI_DATA) == "lon"] <- "PUlon"
+names(TAXI_DATA)[names(TAXI_DATA) == "lat"] <- "PUlat"
+
+TAXI_DATA <- merge(TAXI_DATA, TAXI_ZONES[,c("LocationID", "lon", "lat")], by.x="DOLocationID", by.y="LocationID", all.x= TRUE)
+names(TAXI_DATA)[names(TAXI_DATA) == "lon"] <- "DOlon"
+names(TAXI_DATA)[names(TAXI_DATA) == "lat"] <- "DOlat"
+
 
 #display raw data head
 head(TAXI_DATA)
 
-head(TAXI_DATA$PULocationID)
+
 
 ##qmap(location = "pal hasi", zoom= 18)
 ```
